@@ -10,6 +10,8 @@ import sys
 import xml.etree.ElementTree
 
 import nltk
+nltk.download('punkt')
+
 import numpy as np
 
 

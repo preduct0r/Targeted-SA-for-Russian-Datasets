@@ -25,7 +25,7 @@ def main():
                         type=bool,
                         help="Should model be trained")
     parser.add_argument("--tasks",
-                        default='single QA_B NLI_B QA_M NLI_M',
+                        default='single', #'single QA_B NLI_B QA_M NLI_M'
                         type=str,
                         help="Tasks to evaluate")
 

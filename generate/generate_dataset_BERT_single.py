@@ -31,7 +31,6 @@ for part in ["train", "dev", "test"]:
         # len_loc1 = df[df['sentence2'] == 'location - 2 - вообще'].index[0]
         len_loc1 = 100000
         s = f.readline().strip()
-        s = f.readline().strip()
         f1_general.write('id' + '\t' + 'sentence' + '\t' + 'label' + "\t" + 'tonal_word' + "\t" + 'textID' + '\n')
         while s:
             count += 1
