@@ -59,6 +59,7 @@ def main():
              '--output_dir /home/den/workspaces/absa/' + task,
              '--seed 42']
         if args.train_models:
+            z = ' '.join(run_classifier_TABSA_parameters)
             os.system(' '.join(run_classifier_TABSA_parameters))
 
         results_df = pd.read_csv(os.path.join('/home/den/workspaces/absa/' + task, 'log.txt'), sep='\t')

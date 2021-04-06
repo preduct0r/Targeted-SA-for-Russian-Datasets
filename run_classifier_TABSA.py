@@ -121,7 +121,10 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         assert len(input_mask) == max_seq_length
         assert len(segment_ids) == max_seq_length
 
-        label_id = label_map[example.label]
+        if example.label=='label':
+            continue
+        else:
+            label_id = label_map[example.label]
 
         features.append(InputFeatures(
             input_ids=input_ids,  # словарные номера слов
