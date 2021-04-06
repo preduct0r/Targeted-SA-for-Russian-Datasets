@@ -9,7 +9,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--bert_model",
-                        default='ru_conversational_cased_L-12_H-768_A-12_pt',
+                        default='/home/den/released_models/ru_conversational_cased_L-12_H-768_A-12',
                         type=str,
                         help="Pretrained BERT model.")
     parser.add_argument("--train_batch_size",
@@ -17,15 +17,15 @@ def main():
                         type=int,
                         help="Total batch size for training.")
     parser.add_argument("--num_train_epochs",
-                        default=4.0,
+                        default=2.0,
                         type=float,
                         help="Total number of training epochs to perform.")
     parser.add_argument("--train_models",
-                        default=False,
+                        default=True,
                         type=bool,
                         help="Should model be trained")
     parser.add_argument("--tasks",
-                        default='single', #'single QA_B NLI_B QA_M NLI_M'
+                        default='single single QA_B NLI_B QA_M NLI_M',
                         type=str,
                         help="Tasks to evaluate")
 
@@ -56,12 +56,12 @@ def main():
              '--train_batch_size ' + str(args.train_batch_size),
              '--learning_rate 2e-5',
              '--num_train_epochs ' + str(args.num_train_epochs),
-             '--output_dir results/dataset/' + task,
+             '--output_dir /home/den/workspaces/absa/' + task,
              '--seed 42']
         if args.train_models:
             os.system(' '.join(run_classifier_TABSA_parameters))
 
-        results_df = pd.read_csv(os.path.join('results/dataset', task, 'log.txt'), sep='\t')
+        results_df = pd.read_csv(os.path.join('/home/den/workspaces/absa/' + task, 'log.txt'), sep='\t')
         best_epoch_id = results_df['test_loss'].argmax()
 
         evaluate_parameters = \
