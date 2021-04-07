@@ -277,12 +277,6 @@ def main():
     if n_gpu > 0:
         torch.cuda.manual_seed_all(args.seed)
 
-    bert_config = BertConfig.from_json_file(args.bert_config_file)
-
-    if args.max_seq_length > bert_config.max_position_embeddings:
-        raise ValueError(
-            "Cannot use sequence length {} because the BERT model was only trained up to sequence length {}".format(
-                args.max_seq_length, bert_config.max_position_embeddings))
 
     if os.path.exists(args.output_dir) and os.listdir(args.output_dir):
         raise ValueError("Output directory ({}) already exists and is not empty.".format(args.output_dir))
@@ -300,11 +294,21 @@ def main():
     processor = processors[args.task_name]()
     label_list = processor.get_labels()
 
-    tokenizer = tokenization.FullTokenizer(vocab_file=args.vocab_file, do_lower_case=args.do_lower_case)
 
     # training set
     train_examples = None
     num_train_steps = None
+
+    #==========================model=======================================
+    bert_config = BertConfig.from_json_file(args.bert_config_file)
+
+    if args.max_seq_length > bert_config.max_position_embeddings:
+        raise ValueError(
+            "Cannot use sequence length {} because the BERT model was only trained up to sequence length {}".format(
+                args.max_seq_length, bert_config.max_position_embeddings))
+
+    tokenizer = tokenization.FullTokenizer(vocab_file=args.vocab_file, do_lower_case=args.do_lower_case)
+    #==========================model=======================================
 
     # train_examples = список экземпляров класса InputExample (guid, text_a, text_b, label)
     train_examples = processor.get_train_examples(args.data_dir)
@@ -345,13 +349,17 @@ def main():
         test_data = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
         test_dataloader = DataLoader(test_data, batch_size=args.eval_batch_size, shuffle=False)
 
+
+    #==========================model=======================================
     # model and optimizer
     model = BertForSequenceClassification(bert_config, len(label_list))
 
     if args.init_checkpoint is not None:
         model.bert.load_state_dict(torch.load(args.init_checkpoint, map_location='cpu'))
-    model.to(device)
+    #==========================model=======================================
 
+
+    model.to(device)
     if args.local_rank != -1:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank],
                                                           output_device=args.local_rank)
