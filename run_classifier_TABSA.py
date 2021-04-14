@@ -5,6 +5,7 @@
 from __future__ import absolute_import, division, print_function
 
 import argparse
+import shutil
 import collections
 import logging
 import os
@@ -279,7 +280,8 @@ def main():
 
 
     if os.path.exists(args.output_dir) and os.listdir(args.output_dir):
-        raise ValueError("Output directory ({}) already exists and is not empty.".format(args.output_dir))
+        shutil.rmtree(args.output_dir)
+        # raise ValueError("Output directory ({}) already exists and is not empty.".format(args.output_dir))
     os.makedirs(args.output_dir, exist_ok=True)
 
     # prepare dataloaders
