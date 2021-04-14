@@ -5,6 +5,7 @@
 from __future__ import absolute_import, division, print_function
 
 import argparse
+import shutil
 import collections
 import logging
 import os
@@ -24,6 +25,11 @@ from optimization import BERTAdam
 from processor import (Dataset_single_Processor, Dataset_NLI_M_Processor,
                        Dataset_QA_M_Processor, Dataset_NLI_B_Processor,
                        Dataset_QA_B_Processor)
+from transformers import GPT2LMHeadModel, GPT2Tokenizer, GPT2ForSequenceClassification
+model_name_or_path = "sberbank-ai/rugpt2large"
+
+# from transformers import GP
+
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                     datefmt='%m/%d/%Y %H:%M:%S',
@@ -279,7 +285,8 @@ def main():
 
 
     if os.path.exists(args.output_dir) and os.listdir(args.output_dir):
-        raise ValueError("Output directory ({}) already exists and is not empty.".format(args.output_dir))
+        shutil.rmtree(args.output_dir)
+        # raise ValueError("Output directory ({}) already exists and is not empty.".format(args.output_dir))
     os.makedirs(args.output_dir, exist_ok=True)
 
     # prepare dataloaders
@@ -308,6 +315,8 @@ def main():
                 args.max_seq_length, bert_config.max_position_embeddings))
 
     tokenizer = tokenization.FullTokenizer(vocab_file=args.vocab_file, do_lower_case=args.do_lower_case)
+    # tokenizer = GPT2Tokenizer.from_pretrained(model_name_or_path)
+    model = GPT2ForSequenceClassification.from_pretrained(model_name_or_path).cuda()
     #==========================model=======================================
 
     # train_examples = список экземпляров класса InputExample (guid, text_a, text_b, label)
@@ -352,10 +361,10 @@ def main():
 
     #==========================model=======================================
     # model and optimizer
-    model = BertForSequenceClassification(bert_config, len(label_list))
+    # model = BertForSequenceClassification(bert_config, len(label_list))
 
-    if args.init_checkpoint is not None:
-        model.bert.load_state_dict(torch.load(args.init_checkpoint, map_location='cpu'))
+    # if args.init_checkpoint is not None:
+    #     model.bert.load_state_dict(torch.load(args.init_checkpoint, map_location='cpu'))
     #==========================model=======================================
 
 
