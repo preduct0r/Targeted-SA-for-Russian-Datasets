@@ -60,6 +60,8 @@ def load_vocab(vocab_file):
     (строка_0, 0) ... (строка_n, n)
     """
     vocab = collections.OrderedDict()
+
+
     index = 0
     with open(vocab_file, "r") as reader:
         while True:
@@ -69,6 +71,9 @@ def load_vocab(vocab_file):
             token = token.strip()
             vocab[token] = index
             index += 1
+        vocab['[CLS]'] = index + 1
+        vocab['[SEP]'] = index + 2
+        vocab['[UNK]'] = index + 3
     return vocab
 
 

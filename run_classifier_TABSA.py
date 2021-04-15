@@ -219,7 +219,7 @@ def main():
                         type=float,
                         help="The initial learning rate for Adam.")
     parser.add_argument("--num_train_epochs",
-                        default=3.0,
+                        default=1.0,
                         type=float,
                         help="Total number of training epochs to perform.")
     parser.add_argument("--warmup_proportion",
@@ -256,6 +256,8 @@ def main():
     # args = parser.parse_args(arguments)
     args = parser.parse_args()
 
+    labels_ids = {'положительно':1, 'нейтрально':0, 'отрицательно':-1}
+
     if args.local_rank == -1 or args.no_cuda:
         device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
         n_gpu = torch.cuda.device_count()
@@ -278,6 +280,12 @@ def main():
     if n_gpu > 0:
         torch.cuda.manual_seed_all(args.seed)
 
+    bert_config = BertConfig.from_json_file(args.bert_config_file)
+
+    if args.max_seq_length > bert_config.max_position_embeddings:
+        raise ValueError(
+            "Cannot use sequence length {} because the BERT model was only trained up to sequence length {}".format(
+                args.max_seq_length, bert_config.max_position_embeddings))
 
     if os.path.exists(args.output_dir) and os.listdir(args.output_dir):
         shutil.rmtree(args.output_dir)
@@ -296,21 +304,11 @@ def main():
     processor = processors[args.task_name]()
     label_list = processor.get_labels()
 
+    tokenizer = tokenization.FullTokenizer(vocab_file=args.vocab_file, do_lower_case=args.do_lower_case)
 
     # training set
     train_examples = None
     num_train_steps = None
-
-    #==========================model=======================================
-    bert_config = BertConfig.from_json_file(args.bert_config_file)
-
-    if args.max_seq_length > bert_config.max_position_embeddings:
-        raise ValueError(
-            "Cannot use sequence length {} because the BERT model was only trained up to sequence length {}".format(
-                args.max_seq_length, bert_config.max_position_embeddings))
-
-    tokenizer = tokenization.FullTokenizer(vocab_file=args.vocab_file, do_lower_case=args.do_lower_case)
-    #==========================model=======================================
 
     # train_examples = список экземпляров класса InputExample (guid, text_a, text_b, label)
     train_examples = processor.get_train_examples(args.data_dir)
