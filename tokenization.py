@@ -11,6 +11,8 @@ import unicodedata
 
 import six
 
+import json
+
 
 def convert_to_unicode(text):
     """Converts `text` to Unicode (if it's not already), assuming utf-8 input."""
@@ -60,10 +62,15 @@ def load_vocab(vocab_file):
     (строка_0, 0) ... (строка_n, n)
     """
     vocab = collections.OrderedDict()
+
     index = 0
-    with open(vocab_file, "r") as reader:
-        while True:
-            token = convert_to_unicode(reader.readline())
+    with open(vocab_file, "r") as f:
+        data = json.loads(f.read(), encoding='utf-8')
+        vocab['[CLS]'] = len(data) + 1
+        vocab['[SEP]'] = len(data) + 2
+        vocab['[UNK]'] = len(data) + 3
+        for d in data:
+            token = convert_to_unicode(d)
             if not token:
                 break
             token = token.strip()

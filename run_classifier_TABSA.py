@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import RandomSampler, SequentialSampler
 from tqdm import tqdm, trange
+from helpers import *
 
 import tokenization
 from modeling import BertConfig, BertForSequenceClassification
@@ -25,7 +26,7 @@ from optimization import BERTAdam
 from processor import (Dataset_single_Processor, Dataset_NLI_M_Processor,
                        Dataset_QA_M_Processor, Dataset_NLI_B_Processor,
                        Dataset_QA_B_Processor)
-from transformers import GPT2LMHeadModel, GPT2Tokenizer, GPT2ForSequenceClassification
+from transformers import GPT2LMHeadModel, GPT2Tokenizer, GPT2ForSequenceClassification, AdamW, GPT2Config
 model_name_or_path = "sberbank-ai/rugpt2large"
 
 # from transformers import GP
@@ -261,6 +262,8 @@ def main():
     # args = parser.parse_args(arguments)
     args = parser.parse_args()
 
+    labels_ids = {'положительно':1, 'нейтрально':0, 'отрицательно':-1}
+
     if args.local_rank == -1 or args.no_cuda:
         device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
         n_gpu = torch.cuda.device_count()
@@ -314,10 +317,20 @@ def main():
             "Cannot use sequence length {} because the BERT model was only trained up to sequence length {}".format(
                 args.max_seq_length, bert_config.max_position_embeddings))
 
-    tokenizer = tokenization.FullTokenizer(vocab_file=args.vocab_file, do_lower_case=args.do_lower_case)
-    # tokenizer = GPT2Tokenizer.from_pretrained(model_name_or_path)
-    model = GPT2ForSequenceClassification.from_pretrained(model_name_or_path).cuda()
+    # tokenizer = tokenization.FullTokenizer(vocab_file=args.vocab_file, do_lower_case=args.do_lower_case)
+    tokenizer = GPT2Tokenizer.from_pretrained(model_name_or_path)
+    tokenizer.padding_side = "left"
+    tokenizer.pad_token = tokenizer.eos_token
+
+    model_config = GPT2Config.from_pretrained(pretrained_model_name_or_path=model_name_or_path, num_labels=3)
+    model = GPT2ForSequenceClassification.from_pretrained(model_name_or_path, config=model_config).cuda()
+    model.resize_token_embeddings(len(tokenizer))
+    model.config.pad_token_id = model.config.eos_token_id
     #==========================model=======================================
+
+    gpt2_classificaiton_collator = Gpt2ClassificationCollator(use_tokenizer=tokenizer,
+                                                              labels_encoder=labels_ids,
+                                                              max_sequence_len=args.max_seq_length)
 
     # train_examples = список экземпляров класса InputExample (guid, text_a, text_b, label)
     train_examples = processor.get_train_examples(args.data_dir)
@@ -367,6 +380,13 @@ def main():
     #     model.bert.load_state_dict(torch.load(args.init_checkpoint, map_location='cpu'))
     #==========================model=======================================
 
+    # input_ids = None, attention_mask = None, token_type_ids = None, position_ids = None, head_mask = None, inputs_embeds = None,
+    # labels = None, output_attentions = None, output_hidden_states = None, return_dict = None)
+    #
+    # input_ids = None, past_key_values = None, attention_mask = None, token_type_ids = None, position_ids = None, head_mask = None, inputs_embeds = None,
+    # labels = None, use_cache = None, output_attentions = None, output_hidden_states = None, return_dict = None
+    #
+    # input_ids, segment_ids, input_mask, label_ids
 
     model.to(device)
     if args.local_rank != -1:
@@ -383,7 +403,7 @@ def main():
          'weight_decay_rate': 0.0}
     ]
 
-    optimizer = BERTAdam(optimizer_parameters,
+    optimizer = AdamW(optimizer_parameters,
                          lr=args.learning_rate,
                          warmup=args.warmup_proportion,
                          t_total=num_train_steps)
